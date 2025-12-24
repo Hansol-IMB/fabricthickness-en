@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -36,12 +36,12 @@
     .catbtn{height:42px; display:flex; align-items:center; justify-content:center;
             border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:700;}
     .catbtn.active{background:#111;color:#fff;border-color:#111}
-   .footer-note{
-    margin: 24px 0 10px;
-    text-align: center;
-    font-size: 12px;
-    color: #888;
-  }
+    .footer-note{
+      margin: 24px 0 10px;
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+    }
   </style>
 </head>
 
@@ -51,44 +51,44 @@
   <div class="card">
     <div class="grid grid-2">
       <div>
-        <label>높이 (mm)</label>
+        <label>Height (mm)</label>
         <input id="height" type="number" step="0.001" value="1000" />
       </div>
       <div>
-        <label>튜브</label>
+        <label>Tube</label>
         <select id="tube"></select>
-        <div class="small muted">튜브 목록은 아래에서 펼쳐서 확인 가능</div>
+        <div class="small muted">You can expand the tube list below to review details.</div>
       </div>
     </div>
 
     <div style="margin-top:10px">
-      <label>원단 카테고리</label>
+      <label>Fabric Category</label>
       <div class="catwrap" id="catwrap"></div>
     </div>
 
     <div style="margin-top:8px">
-      <label>원단 종류</label>
+      <label>Fabric Type</label>
       <select id="fabric"></select>
     </div>
 
     <div class="out" style="margin-top:12px">
-      <div>전체 두께 <span class="big" id="g6">-</span> mm</div>
+      <div>Total Thickness <span class="big" id="g6">-</span> mm</div>
       <div id="detailToggle" class="toggle collapsed">
-        <span class="caret">▶</span><span class="muted small">상세 보기 (지름·공식·중간값)</span>
+        <span class="caret">▶</span><span class="muted small">Show details (diameter · formula · intermediate values)</span>
       </div>
       <div id="details" class="details hidden small">
-        <div>지름 = <b id="diameter">-</b> mm, 원단 두께/피치 = <b id="e6">-</b></div>
-        <div>공식: <code>I = ((-2π·지름) + √((2π·지름)^2 + 8π·높이·원단두께)) / (2π·원단두께)</code></div>
+        <div>Diameter = <b id="diameter">-</b> mm, Fabric thickness/pitch = <b id="e6">-</b></div>
+        <div>Formula: <code>I = ((-2π·diameter) + √((2π·diameter)^2 + 8π·height·fabricThickness)) / (2π·fabricThickness)</code></div>
         <div>I = <b id="i6">-</b></div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h3>커버별 최대 두께 & 적용 가능 여부</h3>
+    <h3>Max Thickness by Cover & Compatibility</h3>
     <table id="limitTable">
       <thead>
-        <tr><th>커버</th><th>최대 두께</th><th>적용 가능 여부</th></tr>
+        <tr><th>Cover</th><th>Max Thickness</th><th>Compatibility</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -96,17 +96,17 @@
 
   <div class="card collapsed" id="tubeCard">
     <div class="toggle" id="tubeToggle">
-      <span class="caret">▶</span><h3 style="margin:0">튜브 목록 (접기/펼치기)</h3>
+      <span class="caret">▶</span><h3 style="margin:0">Tube List (collapse/expand)</h3>
     </div>
     <div id="tubeList" class="hidden">
       <table>
-        <thead><tr><th>튜브</th><th>튜브무게</th><th>지름</th></tr></thead>
+        <thead><tr><th>Tube</th><th>Tube Weight</th><th>Diameter</th></tr></thead>
         <tbody id="tubeTable"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ✅ 내장 데이터(JSON) : "관리자/로컬스토리지/비밀번호" 관련 데이터 제거 -->
+  <!-- ✅ Embedded data(JSON): admin/localStorage/password-related parts removed -->
   <script id="data-json" type="application/json">
   {
     "groups": {
@@ -253,7 +253,7 @@
         return JSON.parse((el.textContent || "").trim());
       }catch(e){
         console.error(e);
-        alert("내장 데이터(JSON) 파싱 실패: " + e.message);
+        alert("Embedded data(JSON) parse failed: " + e.message);
         return null;
       }
     }
@@ -268,10 +268,10 @@
       const tb = document.querySelector("#limitTable tbody");
       tb.innerHTML = "";
       (DATA?.limits || []).forEach(row=>{
-        let cls="no", label="불가능";
+        let cls="no", label="Not compatible";
         if(g6>0){
-          if(g6 <= row.limit - 3){ cls="ok"; label="가능"; }
-          else if(g6 <= row.limit){ cls="warn"; label="가능(간섭위험)"; }
+          if(g6 <= row.limit - 3){ cls="ok"; label="Compatible"; }
+          else if(g6 <= row.limit){ cls="warn"; label="Compatible (risk of interference)"; }
         }
         const tr=document.createElement("tr");
         tr.innerHTML = `
@@ -295,7 +295,6 @@
         const o=document.createElement("option");
         o.value = it.original;
         o.textContent = it.display;
-        // 기본 원단 지정(없으면 첫번째)
         const isDefault = (it.original === DATA.defaults?.fabric_original);
         if(i===0 || isDefault) o.selected = true;
         fSel.appendChild(o);
@@ -311,7 +310,7 @@
       const diameter = tube ? Number(tube.diameter) : 0;
 
       const activeCat = document.querySelector(".catbtn.active")?.dataset.cat;
-      // 원 코드 유지: Combi/Twins만 2배 적용
+      // Keep original logic: Combi/Twins use 2x height
       const mult = (activeCat === "Combi" || activeCat === "Twins") ? 2 : 1;
       const effH = height * mult;
 
@@ -336,10 +335,8 @@
     function init(){
       if(!DATA) return;
 
-      // 기본 높이
       if(DATA.defaults?.height != null) $("height").value = DATA.defaults.height;
 
-      // 튜브 선택
       const tSel = $("tube");
       tSel.innerHTML = "";
       (DATA.tubes || []).forEach(t=>{
@@ -350,7 +347,6 @@
         tSel.appendChild(o);
       });
 
-      // 카테고리 버튼
       const cw = $("catwrap");
       cw.innerHTML = "";
       Object.keys(DATA.groups || {}).forEach(cat=>{
@@ -363,7 +359,6 @@
         cw.appendChild(b);
       });
 
-      // 튜브 표
       const tBody = $("tubeTable");
       tBody.innerHTML = "";
       (DATA.tubes || []).forEach(t=>{
@@ -372,20 +367,16 @@
         tBody.appendChild(tr);
       });
 
-      // 카테고리 초기 선택 (없으면 첫번째)
       const firstCat = Object.keys(DATA.groups || {})[0];
       setCategory(DATA.defaults?.group || firstCat);
 
-      // 초기 limit 렌더
       renderLimitRows(0);
 
-      // 이벤트
       ["height","tube","fabric"].forEach(id=>{
         $(id).addEventListener("input", recalc);
         $(id).addEventListener("change", recalc);
       });
 
-      // 상세 토글
       $("detailToggle").addEventListener("click", ()=>{
         const wrap = $("detailToggle");
         const el = $("details");
@@ -394,7 +385,6 @@
         wrap.classList.toggle("collapsed", !open);
       });
 
-      // 튜브 리스트 토글
       $("tubeToggle").addEventListener("click", ()=>{
         const list = $("tubeList");
         const card = $("tubeCard");
@@ -403,13 +393,13 @@
         card.classList.toggle("collapsed", !open);
       });
 
-      // 최초 계산
       recalc();
     }
 
     init();
   </script>
-    <footer class="footer-note">
+
+  <footer class="footer-note">
     Presented by Dexter / Hansol-IMB
   </footer>
 </body>
