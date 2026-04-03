@@ -8,6 +8,7 @@
     html,body{height:100%}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45;max-width:1100px;margin:24px auto;padding:0 16px}
     h1{font-size:1.6rem;margin:0 0 10px}
+    h3{margin:0 0 10px}
     .grid{display:grid;gap:16px}
     .grid-2{grid-template-columns:1fr 1fr; column-gap:24px}
     @media (max-width:740px){.grid-2{grid-template-columns:1fr}}
@@ -16,9 +17,9 @@
     input,select{font-size:1rem;width:100%;padding:.7rem .8rem;border:1px solid #ccc;border-radius:10px;box-sizing:border-box}
     .out{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:12px;margin-top:8px}
     table{width:100%;border-collapse:collapse;margin-top:8px;table-layout:fixed}
-    th,td{border:1px solid #e4e4e4;padding:8px;text-align:center;word-break:keep-all}
-    th{background:#f6f6f6}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:700}
+    th,td{border:1px solid #e4e4e4;padding:10px;text-align:center;word-break:keep-all;vertical-align:middle}
+    th{background:#f6f6f6;font-weight:800}
+    .pill{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:700;font-size:.92rem;line-height:1}
     .ok{background:#e7f7ee;color:#0a7f55}
     .warn{background:#fff7e6;color:#b06900;border:1px solid #ffe1a7}
     .no{background:#fdeceb;color:#b42318}
@@ -36,6 +37,7 @@
     .catbtn{height:42px; display:flex; align-items:center; justify-content:center;
             border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:700;}
     .catbtn.active{background:#111;color:#fff;border-color:#111}
+    .table-block + .table-block{margin-top:28px}
     .footer-note{
       margin: 24px 0 10px;
       text-align: center;
@@ -86,12 +88,32 @@
 
   <div class="card">
     <h3>Max Thickness by Cover & Compatibility</h3>
-    <table id="limitTable">
-      <thead>
-        <tr><th>Cover</th><th>Max Thickness</th><th>Compatibility</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+
+    <div class="table-block">
+      <table id="headrailTable">
+        <thead>
+          <tr>
+            <th>Headrail Type</th>
+            <th>Max Thickness</th>
+            <th>Compatibility</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="table-block">
+      <table id="limitTable">
+        <thead>
+          <tr>
+            <th>Cover</th>
+            <th>Max Thickness</th>
+            <th>Compatibility</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="card collapsed" id="tubeCard">
@@ -106,7 +128,6 @@
     </div>
   </div>
 
-  <!-- ✅ Embedded data(JSON): admin/localStorage/password-related parts removed -->
   <script id="data-json" type="application/json">
   {
     "groups": {
@@ -240,6 +261,11 @@
   <script>
     const $ = (id)=>document.getElementById(id);
 
+    const HEADRAIL_LIMITS = [
+      { name: "Headrail Type (Normal Clutch)", limit: 60 },
+      { name: "Headrail Type (Gear Clutch)", limit: 80 }
+    ];
+
     function getEmbedded(){
       const el = $("data-json");
       try{
@@ -257,20 +283,51 @@
       return (DATA?.tubes || []).find(t => t.name === name);
     }
 
-    function renderLimitRows(g6){
-      const tb = document.querySelector("#limitTable tbody");
-      tb.innerHTML = "";
-      (DATA?.limits || []).forEach(row=>{
-        let cls="no", label="Not compatible";
-        if(g6>0){
-          if(g6 <= row.limit - 3){ cls="ok"; label="Compatible"; }
-          else if(g6 <= row.limit){ cls="warn"; label="Compatible (risk of interference)"; }
+    function getCompatibility(limit, g6){
+      let cls = "no";
+      let label = "Not compatible";
+
+      if(g6 > 0){
+        if(g6 <= limit - 3){
+          cls = "ok";
+          label = "Compatible";
+        }else if(g6 <= limit){
+          cls = "warn";
+          label = "Compatible (risk of interference)";
         }
-        const tr=document.createElement("tr");
+      }
+
+      return { cls, label };
+    }
+
+    function renderHeadrailRows(g6){
+      const tb = document.querySelector("#headrailTable tbody");
+      tb.innerHTML = "";
+
+      HEADRAIL_LIMITS.forEach(row => {
+        const status = getCompatibility(row.limit, g6);
+        const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${row.name}</td>
           <td><b>${row.limit}</b></td>
-          <td><span class="pill ${cls}">${label}</span></td>`;
+          <td><span class="pill ${status.cls}">${status.label}</span></td>
+        `;
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderLimitRows(g6){
+      const tb = document.querySelector("#limitTable tbody");
+      tb.innerHTML = "";
+
+      (DATA?.limits || []).forEach(row=>{
+        const status = getCompatibility(row.limit, g6);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td><b>${row.limit}</b></td>
+          <td><span class="pill ${status.cls}">${status.label}</span></td>
+        `;
         tb.appendChild(tr);
       });
     }
@@ -285,11 +342,11 @@
 
       const items = DATA.groups?.[cat] || [];
       items.forEach((it, i)=>{
-        const o=document.createElement("option");
+        const o = document.createElement("option");
         o.value = it.original;
         o.textContent = it.display;
         const isDefault = (it.original === DATA.defaults?.fabric_original);
-        if(i===0 || isDefault) o.selected = true;
+        if(i === 0 || isDefault) o.selected = true;
         fSel.appendChild(o);
       });
 
@@ -303,7 +360,6 @@
       const diameter = tube ? Number(tube.diameter) : 0;
 
       const activeCat = document.querySelector(".catbtn.active")?.dataset.cat;
-      // Keep original logic: Combi/Twins use 2x height
       const mult = (activeCat === "Combi" || activeCat === "Twins") ? 2 : 1;
       const effH = height * mult;
 
@@ -322,7 +378,9 @@
       $("e6").textContent = Number.isFinite(e6) ? String(e6) : "-";
       $("i6").textContent = Number.isFinite(I) ? I.toFixed(3) : "-";
 
-      renderLimitRows(Number.isFinite(G) ? G : 0);
+      const totalThickness = Number.isFinite(G) ? G : 0;
+      renderHeadrailRows(totalThickness);
+      renderLimitRows(totalThickness);
     }
 
     function init(){
@@ -333,7 +391,7 @@
       const tSel = $("tube");
       tSel.innerHTML = "";
       (DATA.tubes || []).forEach(t=>{
-        const o=document.createElement("option");
+        const o = document.createElement("option");
         o.value = t.name;
         o.textContent = t.name;
         if(t.name === DATA.defaults?.tube) o.selected = true;
@@ -343,7 +401,7 @@
       const cw = $("catwrap");
       cw.innerHTML = "";
       Object.keys(DATA.groups || {}).forEach(cat=>{
-        const b=document.createElement("button");
+        const b = document.createElement("button");
         b.type = "button";
         b.className = "catbtn" + (cat === DATA.defaults?.group ? " active" : "");
         b.textContent = cat;
@@ -355,7 +413,7 @@
       const tBody = $("tubeTable");
       tBody.innerHTML = "";
       (DATA.tubes || []).forEach(t=>{
-        const tr=document.createElement("tr");
+        const tr = document.createElement("tr");
         tr.innerHTML = `<td>${t.name}</td><td>${t.weight}</td><td>${t.diameter}</td>`;
         tBody.appendChild(tr);
       });
@@ -363,6 +421,7 @@
       const firstCat = Object.keys(DATA.groups || {})[0];
       setCategory(DATA.defaults?.group || firstCat);
 
+      renderHeadrailRows(0);
       renderLimitRows(0);
 
       ["height","tube","fabric"].forEach(id=>{
